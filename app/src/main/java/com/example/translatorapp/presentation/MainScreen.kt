@@ -3,6 +3,7 @@ package com.example.translatorapp.presentation
 import android.app.Activity
 import android.content.Intent
 import android.speech.RecognizerIntent
+import android.speech.tts.TextToSpeech
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,8 +15,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -31,13 +35,31 @@ import java.util.Locale
 
 
 @Composable
-fun MainScreen(modifier: Modifier = Modifier) {
+fun MainScreen(
+    modifier: Modifier = Modifier
+) {
+
+    var isSpeaking by remember { mutableStateOf(false) }
 
     val speechText = remember { mutableStateOf("Hello there!!") }
 
     val context = LocalContext.current
 
     val translatedText = remember { mutableStateOf("") }
+    val tts = remember {
+        TextToSpeech(context){
+            if (it == TextToSpeech.SUCCESS){
+
+            }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            tts.stop()
+            tts.shutdown()
+        }
+    }
 
     val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if(it.resultCode == Activity.RESULT_OK){
@@ -118,6 +140,23 @@ fun MainScreen(modifier: Modifier = Modifier) {
             fontSize = 18.sp
         )
 
+        Spacer(modifier = modifier.height(10.dp))
+
+        Button(
+            onClick = {
+                if (!isSpeaking){
+                    tts.language = Locale.getDefault()
+                    tts.speak(translatedText.value, TextToSpeech.QUEUE_FLUSH, null, null)
+                    isSpeaking = true
+                }
+            }
+        ) {
+            Text(
+                text = "Speak Out loud",
+                fontSize = 18.sp
+            )
+        }
+
     }
 }
 
@@ -126,6 +165,8 @@ fun MainScreen(modifier: Modifier = Modifier) {
 @Composable
 fun MainScreenPreview(){
     TranslatorAppTheme {
-        MainScreen(Modifier.fillMaxSize())
+        MainScreen(
+            Modifier.fillMaxSize()
+        )
     }
 }
